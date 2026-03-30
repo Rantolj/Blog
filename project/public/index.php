@@ -341,17 +341,63 @@ if ($route === internalRouteAdmin() || $route === routeAdmin()) {
     $editingArticle = $editingId ? getArticleById($editingId) : null;
     $articles = getAllArticlesAdmin();
 
-    $tinyMceScript = <<<'HTML'
-<script src="https://cdn.tiny.cloud/1/okqm4tc4351myg2o3d0kze1dq8ggl3gnb4y8875yfizyj42o/tinymce/6/tinymce.min.js"></script>
+        $tinyMceScript = <<<'HTML'
 <script>
-tinymce.init({
-  selector: '#contenu',
-  height: 360,
-  menubar: false,
-  plugins: 'lists link image table code',
-  toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
-  block_formats: 'Paragraphe=p; Titre 2=h2; Titre 3=h3; Titre 4=h4; Titre 5=h5; Titre 6=h6'
-});
+(function () {
+    var tinyReady = false;
+    var tinyLoading = false;
+
+    function initEditor() {
+        if (tinyReady || typeof tinymce === 'undefined') {
+            return;
+        }
+
+        tinyReady = true;
+        tinymce.init({
+            selector: '#contenu',
+            height: 360,
+            menubar: false,
+            plugins: 'lists link image table code',
+            toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
+            block_formats: 'Paragraphe=p; Titre 2=h2; Titre 3=h3; Titre 4=h4; Titre 5=h5; Titre 6=h6'
+        });
+
+        var button = document.getElementById('activate-editor');
+        if (button) {
+            button.textContent = 'Editeur TinyMCE actif';
+            button.disabled = true;
+        }
+    }
+
+    function loadTinyMce() {
+        if (typeof tinymce !== 'undefined') {
+            initEditor();
+            return;
+        }
+
+        if (tinyLoading) {
+            return;
+        }
+
+        tinyLoading = true;
+        var script = document.createElement('script');
+        script.src = 'https://cdn.tiny.cloud/1/okqm4tc4351myg2o3d0kze1dq8ggl3gnb4y8875yfizyj42o/tinymce/6/tinymce.min.js';
+        script.referrerPolicy = 'origin';
+        script.onload = initEditor;
+        document.head.appendChild(script);
+    }
+
+    var button = document.getElementById('activate-editor');
+    var textarea = document.getElementById('contenu');
+
+    if (button) {
+        button.addEventListener('click', loadTinyMce);
+    }
+
+    if (textarea) {
+        textarea.addEventListener('focus', loadTinyMce, { once: true });
+    }
+})();
 </script>
 HTML;
 
