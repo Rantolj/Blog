@@ -36,6 +36,8 @@
     </select>
 
     <label for="contenu">Contenu (structure h2-h6 dans l'editeur)</label>
+    <p class="meta">L'editeur avance TinyMCE est charge a la demande pour accelerer la page mobile.</p>
+    <button type="button" id="activate-editor">Activer l'editeur TinyMCE</button>
     <textarea id="contenu" name="contenu"><?php echo e((string) ($editingArticle['contenu'] ?? '')); ?></textarea>
 
     <button type="submit">Enregistrer</button>
