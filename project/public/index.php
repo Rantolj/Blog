@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../app/Controllers/ArticleController.php';
+require_once __DIR__ . '/../app/Controllers/AuthController.php';
 
 function e(string $value): string
 {
@@ -46,6 +51,16 @@ function routeAdmin(): string
     return 'atelier';
 }
 
+function routeLogin(): string
+{
+    return 'acces-bo';
+}
+
+function routeLogout(): string
+{
+    return 'sortie-bo';
+}
+
 function routeSave(): string
 {
     return '__cmd/maj';
@@ -69,6 +84,16 @@ function internalRouteArticlePrefix(): string
 function internalRouteAdmin(): string
 {
     return '__r/admin';
+}
+
+function internalRouteLogin(): string
+{
+    return '__r/login';
+}
+
+function internalRouteLogout(): string
+{
+    return '__r/logout';
 }
 
 function internalRouteSave(): string
@@ -114,8 +139,38 @@ function redirectTo(string $path): void
     exit;
 }
 
+function isAdminAuthenticated(): bool
+{
+    return !empty($_SESSION['is_admin']);
+}
+
+function loginAdmin(int $userId, string $username): void
+{
+    $_SESSION['is_admin'] = true;
+    $_SESSION['admin_id'] = $userId;
+    $_SESSION['admin_user'] = $username;
+}
+
+function logoutAdmin(): void
+{
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+}
+
+function requireAdminAuth(): void
+{
+    if (!isAdminAuthenticated()) {
+        redirectTo(routeLogin());
+    }
+}
+
 try {
     ensureArticlesSchema();
+    ensureUsersSchema();
 } catch (Throwable $exception) {
   renderPage(
     'errors/message',
@@ -141,13 +196,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         header('Location: ' . url(routeAdmin()), true, 301);
         exit;
     }
+    if ($route === 'admin/login') {
+        header('Location: ' . url(routeLogin()), true, 301);
+        exit;
+    }
+    if ($route === 'admin/logout') {
+        header('Location: ' . url(routeLogout()), true, 301);
+        exit;
+    }
     if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $legacyMatch) === 1) {
         header('Location: ' . url(routeArticle($legacyMatch[1])), true, 301);
         exit;
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($route === internalRouteLogout() || $route === routeLogout())) {
+    logoutAdmin();
+    redirectTo(routeLogin());
+}
+
+if ($route === internalRouteLogin() || $route === routeLogin()) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        $authenticatedUser = authenticateBackofficeUser($username, $password);
+
+        if ($authenticatedUser !== null) {
+            loginAdmin((int) $authenticatedUser['id'], (string) $authenticatedUser['username']);
+            redirectTo(routeAdmin());
+        }
+
+        renderPage(
+            'admin/login',
+            'Connexion BackOffice',
+            'Connecte-toi pour acceder a la gestion des contenus.',
+            ['loginError' => 'Identifiants invalides.']
+        );
+        exit;
+    }
+
+    if (isAdminAuthenticated()) {
+        redirectTo(routeAdmin());
+    }
+
+    renderPage(
+        'admin/login',
+        'Connexion BackOffice',
+        'Connecte-toi pour acceder a la gestion des contenus.'
+    );
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteSave() || $route === routeSave() || $route === 'admin/articles/save')) {
+    requireAdminAuth();
+
     try {
         $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int) $_POST['id'] : null;
         saveArticle($_POST, $id);
@@ -170,6 +273,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteSave() || 
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteDelete() || $route === routeDelete() || $route === 'admin/articles/delete')) {
+    requireAdminAuth();
+
     $id = (int) ($_POST['id'] ?? 0);
     if ($id > 0) {
         try {
@@ -230,6 +335,8 @@ if (preg_match('#^' . preg_quote(internalRouteArticlePrefix(), '#') . '([a-z0-9\
 }
 
 if ($route === internalRouteAdmin() || $route === routeAdmin()) {
+    requireAdminAuth();
+
     $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
     $editingArticle = $editingId ? getArticleById($editingId) : null;
     $articles = getAllArticlesAdmin();

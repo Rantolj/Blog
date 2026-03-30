@@ -4,6 +4,8 @@ RewriteEngine On
 RewriteRule ^capsule/?$ index.php?route=__r/news [QSA,L,NC]
 RewriteRule ^focus/([a-z0-9-]+)/?$ index.php?route=__r/article/$1 [QSA,L,NC]
 RewriteRule ^atelier/?$ index.php?route=__r/admin [QSA,L,NC]
+RewriteRule ^acces-bo/?$ index.php?route=__r/login [QSA,L,NC]
+RewriteRule ^sortie-bo/?$ index.php?route=__r/logout [QSA,L,NC]
 RewriteRule ^__cmd/maj/?$ index.php?route=__r/save [QSA,L,NC]
 RewriteRule ^__cmd/purge/?$ index.php?route=__r/delete [QSA,L,NC]
 
@@ -11,6 +13,8 @@ RewriteRule ^__cmd/purge/?$ index.php?route=__r/delete [QSA,L,NC]
 RewriteRule ^actualites/?$ capsule [R=301,L,NC]
 RewriteRule ^article/([a-z0-9-]+)/?$ focus/$1 [R=301,L,NC]
 RewriteRule ^admin/articles/?$ atelier [R=301,L,NC]
+RewriteRule ^admin/login/?$ acces-bo [R=301,L,NC]
+RewriteRule ^admin/logout/?$ sortie-bo [R=301,L,NC]
 RewriteRule ^admin/articles/save/?$ __cmd/maj [R=301,L,NC]
 RewriteRule ^admin/articles/delete/?$ __cmd/purge [R=301,L,NC]
 

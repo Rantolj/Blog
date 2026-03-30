@@ -19,6 +19,11 @@
       <a href="<?php echo e(url('')); ?>">Accueil</a>
       <a href="<?php echo e(url(routeNews())); ?>">Actualites</a>
       <a href="<?php echo e(url(routeAdmin())); ?>">BackOffice</a>
+      <?php if (isAdminAuthenticated()): ?>
+        <a href="<?php echo e(url(routeLogout())); ?>">Deconnexion</a>
+      <?php else: ?>
+        <a href="<?php echo e(url(routeLogin())); ?>">Connexion BO</a>
+      <?php endif; ?>
     </nav>
   </div>
 </header>
