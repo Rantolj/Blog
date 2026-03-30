@@ -1,5 +1,20 @@
 RewriteEngine On
 
+# URLs publiques (propres) -> routes internes
+RewriteRule ^capsule/?$ index.php?route=__r/news [QSA,L,NC]
+RewriteRule ^focus/([a-z0-9-]+)/?$ index.php?route=__r/article/$1 [QSA,L,NC]
+RewriteRule ^atelier/?$ index.php?route=__r/admin [QSA,L,NC]
+RewriteRule ^__cmd/maj/?$ index.php?route=__r/save [QSA,L,NC]
+RewriteRule ^__cmd/purge/?$ index.php?route=__r/delete [QSA,L,NC]
+
+# Compat legacy -> nouvelles URLs
+RewriteRule ^actualites/?$ capsule [R=301,L,NC]
+RewriteRule ^article/([a-z0-9-]+)/?$ focus/$1 [R=301,L,NC]
+RewriteRule ^admin/articles/?$ atelier [R=301,L,NC]
+RewriteRule ^admin/articles/save/?$ __cmd/maj [R=301,L,NC]
+RewriteRule ^admin/articles/delete/?$ __cmd/purge [R=301,L,NC]
+
+# Fallback: toute autre URL passe au front controller
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]

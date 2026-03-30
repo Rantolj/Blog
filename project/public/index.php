@@ -31,6 +31,56 @@ function url(string $path = ''): string
     return ($base !== '' ? $base : '') . '/' . $normalized;
 }
 
+function routeNews(): string
+{
+    return 'capsule';
+}
+
+function routeArticle(string $slug): string
+{
+    return 'focus/' . $slug;
+}
+
+function routeAdmin(): string
+{
+    return 'atelier';
+}
+
+function routeSave(): string
+{
+    return '__cmd/maj';
+}
+
+function routeDelete(): string
+{
+    return '__cmd/purge';
+}
+
+function internalRouteNews(): string
+{
+    return '__r/news';
+}
+
+function internalRouteArticlePrefix(): string
+{
+    return '__r/article/';
+}
+
+function internalRouteAdmin(): string
+{
+    return '__r/admin';
+}
+
+function internalRouteSave(): string
+{
+    return '__r/save';
+}
+
+function internalRouteDelete(): string
+{
+    return '__r/delete';
+}
+
 function renderPage(
     string $view,
     string $title,
@@ -82,11 +132,26 @@ try {
 
 $route = currentRoute();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if ($route === 'actualites') {
+        header('Location: ' . url(routeNews()), true, 301);
+        exit;
+    }
+    if ($route === 'admin/articles') {
+        header('Location: ' . url(routeAdmin()), true, 301);
+        exit;
+    }
+    if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $legacyMatch) === 1) {
+        header('Location: ' . url(routeArticle($legacyMatch[1])), true, 301);
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteSave() || $route === routeSave() || $route === 'admin/articles/save')) {
     try {
         $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int) $_POST['id'] : null;
         saveArticle($_POST, $id);
-        redirectTo('admin/articles');
+        redirectTo(routeAdmin());
     } catch (Throwable $exception) {
     renderPage(
       'errors/message',
@@ -95,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
       [
         'heading' => 'Erreur de validation',
         'message' => $exception->getMessage(),
-        'backUrl' => url('admin/articles'),
+                'backUrl' => url(routeAdmin()),
         'backLabel' => 'Retour au BackOffice',
       ],
       422
@@ -104,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteDelete() || $route === routeDelete() || $route === 'admin/articles/delete')) {
     $id = (int) ($_POST['id'] ?? 0);
     if ($id > 0) {
         try {
@@ -117,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete')
                 [
                     'heading' => 'Suppression echouee',
                     'message' => $exception->getMessage(),
-                    'backUrl' => url('admin/articles'),
+                    'backUrl' => url(routeAdmin()),
                     'backLabel' => 'Retour au BackOffice',
                 ],
                 500
@@ -125,10 +190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete')
             exit;
         }
     }
-    redirectTo('admin/articles');
+    redirectTo(routeAdmin());
 }
 
-if ($route === '' || $route === 'actualites') {
+if ($route === '' || $route === internalRouteNews() || $route === routeNews()) {
     $articles = getPublishedArticles();
     renderPage(
         'front/list',
@@ -139,8 +204,8 @@ if ($route === '' || $route === 'actualites') {
     exit;
 }
 
-if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $matches) === 1) {
-    $slug = $matches[1];
+if (preg_match('#^' . preg_quote(internalRouteArticlePrefix(), '#') . '([a-z0-9\-]+)$#', $route, $matches) === 1 || preg_match('#^focus/([a-z0-9\-]+)$#', $route, $matches) === 1) {
+    $slug = $matches[1] ?? '';
     $article = getPublishedArticleBySlug($slug);
     if ($article === null) {
         renderPage(
@@ -164,7 +229,7 @@ if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $matches) === 1) {
     exit;
 }
 
-if ($route === 'admin/articles') {
+if ($route === internalRouteAdmin() || $route === routeAdmin()) {
     $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
     $editingArticle = $editingId ? getArticleById($editingId) : null;
     $articles = getAllArticlesAdmin();

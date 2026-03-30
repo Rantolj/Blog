@@ -2,5 +2,5 @@
 
 declare(strict_types=1);
 
-header('Location: public/admin/articles');
+header('Location: public/atelier');
 exit;
