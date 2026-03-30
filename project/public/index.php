@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../app/Controllers/ArticleController.php';
+require_once __DIR__ . '/../app/Controllers/AuthController.php';
 
 function e(string $value): string
 {
@@ -29,6 +34,76 @@ function url(string $path = ''): string
         return $base !== '' ? $base . '/' : '/';
     }
     return ($base !== '' ? $base : '') . '/' . $normalized;
+}
+
+function routeNews(): string
+{
+    return 'capsule';
+}
+
+function routeArticle(string $slug): string
+{
+    return 'focus/' . $slug;
+}
+
+function routeAdmin(): string
+{
+    return 'atelier';
+}
+
+function routeLogin(): string
+{
+    return 'acces-bo';
+}
+
+function routeLogout(): string
+{
+    return 'sortie-bo';
+}
+
+function routeSave(): string
+{
+    return '__cmd/maj';
+}
+
+function routeDelete(): string
+{
+    return '__cmd/purge';
+}
+
+function internalRouteNews(): string
+{
+    return '__r/news';
+}
+
+function internalRouteArticlePrefix(): string
+{
+    return '__r/article/';
+}
+
+function internalRouteAdmin(): string
+{
+    return '__r/admin';
+}
+
+function internalRouteLogin(): string
+{
+    return '__r/login';
+}
+
+function internalRouteLogout(): string
+{
+    return '__r/logout';
+}
+
+function internalRouteSave(): string
+{
+    return '__r/save';
+}
+
+function internalRouteDelete(): string
+{
+    return '__r/delete';
 }
 
 function renderPage(
@@ -64,8 +139,38 @@ function redirectTo(string $path): void
     exit;
 }
 
+function isAdminAuthenticated(): bool
+{
+    return !empty($_SESSION['is_admin']);
+}
+
+function loginAdmin(int $userId, string $username): void
+{
+    $_SESSION['is_admin'] = true;
+    $_SESSION['admin_id'] = $userId;
+    $_SESSION['admin_user'] = $username;
+}
+
+function logoutAdmin(): void
+{
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
+}
+
+function requireAdminAuth(): void
+{
+    if (!isAdminAuthenticated()) {
+        redirectTo(routeLogin());
+    }
+}
+
 try {
     ensureArticlesSchema();
+    ensureUsersSchema();
 } catch (Throwable $exception) {
   renderPage(
     'errors/message',
@@ -82,11 +187,74 @@ try {
 
 $route = currentRoute();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if ($route === 'actualites') {
+        header('Location: ' . url(routeNews()), true, 301);
+        exit;
+    }
+    if ($route === 'admin/articles') {
+        header('Location: ' . url(routeAdmin()), true, 301);
+        exit;
+    }
+    if ($route === 'admin/login') {
+        header('Location: ' . url(routeLogin()), true, 301);
+        exit;
+    }
+    if ($route === 'admin/logout') {
+        header('Location: ' . url(routeLogout()), true, 301);
+        exit;
+    }
+    if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $legacyMatch) === 1) {
+        header('Location: ' . url(routeArticle($legacyMatch[1])), true, 301);
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($route === internalRouteLogout() || $route === routeLogout())) {
+    logoutAdmin();
+    redirectTo(routeLogin());
+}
+
+if ($route === internalRouteLogin() || $route === routeLogin()) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = trim((string) ($_POST['username'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        $authenticatedUser = authenticateBackofficeUser($username, $password);
+
+        if ($authenticatedUser !== null) {
+            loginAdmin((int) $authenticatedUser['id'], (string) $authenticatedUser['username']);
+            redirectTo(routeAdmin());
+        }
+
+        renderPage(
+            'admin/login',
+            'Connexion BackOffice',
+            'Connecte-toi pour acceder a la gestion des contenus.',
+            ['loginError' => 'Identifiants invalides.']
+        );
+        exit;
+    }
+
+    if (isAdminAuthenticated()) {
+        redirectTo(routeAdmin());
+    }
+
+    renderPage(
+        'admin/login',
+        'Connexion BackOffice',
+        'Connecte-toi pour acceder a la gestion des contenus.'
+    );
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteSave() || $route === routeSave() || $route === 'admin/articles/save')) {
+    requireAdminAuth();
+
     try {
         $id = isset($_POST['id']) && $_POST['id'] !== '' ? (int) $_POST['id'] : null;
         saveArticle($_POST, $id);
-        redirectTo('admin/articles');
+        redirectTo(routeAdmin());
     } catch (Throwable $exception) {
     renderPage(
       'errors/message',
@@ -95,7 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
       [
         'heading' => 'Erreur de validation',
         'message' => $exception->getMessage(),
-        'backUrl' => url('admin/articles'),
+                'backUrl' => url(routeAdmin()),
         'backLabel' => 'Retour au BackOffice',
       ],
       422
@@ -104,7 +272,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/save') {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($route === internalRouteDelete() || $route === routeDelete() || $route === 'admin/articles/delete')) {
+    requireAdminAuth();
+
     $id = (int) ($_POST['id'] ?? 0);
     if ($id > 0) {
         try {
@@ -117,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete')
                 [
                     'heading' => 'Suppression echouee',
                     'message' => $exception->getMessage(),
-                    'backUrl' => url('admin/articles'),
+                    'backUrl' => url(routeAdmin()),
                     'backLabel' => 'Retour au BackOffice',
                 ],
                 500
@@ -125,10 +295,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $route === 'admin/articles/delete')
             exit;
         }
     }
-    redirectTo('admin/articles');
+    redirectTo(routeAdmin());
 }
 
-if ($route === '' || $route === 'actualites') {
+if ($route === '' || $route === internalRouteNews() || $route === routeNews()) {
     $articles = getPublishedArticles();
     renderPage(
         'front/list',
@@ -139,8 +309,8 @@ if ($route === '' || $route === 'actualites') {
     exit;
 }
 
-if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $matches) === 1) {
-    $slug = $matches[1];
+if (preg_match('#^' . preg_quote(internalRouteArticlePrefix(), '#') . '([a-z0-9\-]+)$#', $route, $matches) === 1 || preg_match('#^focus/([a-z0-9\-]+)$#', $route, $matches) === 1) {
+    $slug = $matches[1] ?? '';
     $article = getPublishedArticleBySlug($slug);
     if ($article === null) {
         renderPage(
@@ -164,22 +334,70 @@ if (preg_match('#^article/([a-z0-9\-]+)$#', $route, $matches) === 1) {
     exit;
 }
 
-if ($route === 'admin/articles') {
+if ($route === internalRouteAdmin() || $route === routeAdmin()) {
+    requireAdminAuth();
+
     $editingId = isset($_GET['edit']) ? (int) $_GET['edit'] : null;
     $editingArticle = $editingId ? getArticleById($editingId) : null;
     $articles = getAllArticlesAdmin();
 
-    $tinyMceScript = <<<'HTML'
-<script src="https://cdn.tiny.cloud/1/okqm4tc4351myg2o3d0kze1dq8ggl3gnb4y8875yfizyj42o/tinymce/6/tinymce.min.js"></script>
+        $tinyMceScript = <<<'HTML'
 <script>
-tinymce.init({
-  selector: '#contenu',
-  height: 360,
-  menubar: false,
-  plugins: 'lists link image table code',
-  toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
-  block_formats: 'Paragraphe=p; Titre 2=h2; Titre 3=h3; Titre 4=h4; Titre 5=h5; Titre 6=h6'
-});
+(function () {
+    var tinyReady = false;
+    var tinyLoading = false;
+
+    function initEditor() {
+        if (tinyReady || typeof tinymce === 'undefined') {
+            return;
+        }
+
+        tinyReady = true;
+        tinymce.init({
+            selector: '#contenu',
+            height: 360,
+            menubar: false,
+            plugins: 'lists link image table code',
+            toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
+            block_formats: 'Paragraphe=p; Titre 2=h2; Titre 3=h3; Titre 4=h4; Titre 5=h5; Titre 6=h6'
+        });
+
+        var button = document.getElementById('activate-editor');
+        if (button) {
+            button.textContent = 'Editeur TinyMCE actif';
+            button.disabled = true;
+        }
+    }
+
+    function loadTinyMce() {
+        if (typeof tinymce !== 'undefined') {
+            initEditor();
+            return;
+        }
+
+        if (tinyLoading) {
+            return;
+        }
+
+        tinyLoading = true;
+        var script = document.createElement('script');
+        script.src = 'https://cdn.tiny.cloud/1/okqm4tc4351myg2o3d0kze1dq8ggl3gnb4y8875yfizyj42o/tinymce/6/tinymce.min.js';
+        script.referrerPolicy = 'origin';
+        script.onload = initEditor;
+        document.head.appendChild(script);
+    }
+
+    var button = document.getElementById('activate-editor');
+    var textarea = document.getElementById('contenu');
+
+    if (button) {
+        button.addEventListener('click', loadTinyMce);
+    }
+
+    if (textarea) {
+        textarea.addEventListener('focus', loadTinyMce, { once: true });
+    }
+})();
 </script>
 HTML;
 

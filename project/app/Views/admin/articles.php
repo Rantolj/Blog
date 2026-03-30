@@ -5,7 +5,7 @@
 
 <section class="admin-form-wrap">
   <h3><?php echo $editingArticle ? 'Modifier un article' : 'Nouvel article'; ?></h3>
-  <form method="POST" action="<?php echo e(url('admin/articles/save')); ?>">
+  <form method="POST" action="<?php echo e(url(routeSave())); ?>">
     <input type="hidden" name="id" value="<?php echo e((string) ($editingArticle['id'] ?? '')); ?>">
 
     <label for="titre">Titre (h1 de la page)</label>
@@ -36,6 +36,8 @@
     </select>
 
     <label for="contenu">Contenu (structure h2-h6 dans l'editeur)</label>
+    <p class="meta">L'editeur avance TinyMCE est charge a la demande pour accelerer la page mobile.</p>
+    <button type="button" id="activate-editor">Activer l'editeur TinyMCE</button>
     <textarea id="contenu" name="contenu"><?php echo e((string) ($editingArticle['contenu'] ?? '')); ?></textarea>
 
     <button type="submit">Enregistrer</button>
@@ -49,15 +51,15 @@
       <h4><?php echo e((string) $item['titre']); ?></h4>
       <h5>URL</h5>
       <?php if (!empty($item['slug'])): ?>
-        <p><a href="<?php echo e(url('article/' . (string) $item['slug'])); ?>"><?php echo e(url('article/' . (string) $item['slug'])); ?></a></p>
+        <p><a href="<?php echo e(url(routeArticle((string) $item['slug']))); ?>"><?php echo e(url(routeArticle((string) $item['slug']))); ?></a></p>
       <?php else: ?>
         <p>Slug non defini</p>
       <?php endif; ?>
       <h6>Statut: <?php echo e((string) $item['status']); ?></h6>
       <p>
-        <a href="<?php echo e(url('admin/articles?edit=' . (string) $item['id'])); ?>">Modifier</a>
+        <a href="<?php echo e(url(routeAdmin()) . '?edit=' . (string) $item['id']); ?>">Modifier</a>
       </p>
-      <form method="POST" action="<?php echo e(url('admin/articles/delete')); ?>" onsubmit="return confirm('Supprimer cet article ?');">
+      <form method="POST" action="<?php echo e(url(routeDelete())); ?>" onsubmit="return confirm('Supprimer cet article ?');">
         <input type="hidden" name="id" value="<?php echo e((string) $item['id']); ?>">
         <button type="submit">Supprimer</button>
       </form>

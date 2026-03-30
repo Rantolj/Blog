@@ -13,7 +13,7 @@
 <?php foreach ($articles as $article): ?>
   <article class="article-card">
     <h3>
-      <a href="<?php echo e(url('article/' . (string) $article['slug'])); ?>">
+      <a href="<?php echo e(url(routeArticle((string) $article['slug']))); ?>">
         <?php echo e((string) $article['titre']); ?>
       </a>
     </h3>
@@ -22,6 +22,6 @@
       <img src="<?php echo e((string) $article['image_url']); ?>" alt="<?php echo e((string) ($article['image_alt'] ?: $article['titre'])); ?>" class="cover-image">
     <?php endif; ?>
     <p><?php echo e((string) ($article['resume'] ?: mb_substr(strip_tags((string) $article['contenu']), 0, 220))); ?>...</p>
-    <p><a href="<?php echo e(url('article/' . (string) $article['slug'])); ?>">Lire l'article</a></p>
+    <p><a href="<?php echo e(url(routeArticle((string) $article['slug']))); ?>">Lire l'article</a></p>
   </article>
 <?php endforeach; ?>
