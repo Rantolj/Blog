@@ -19,7 +19,12 @@
     </h3>
     <p class="meta">Publie le <?php echo e((string) $article['created_at']); ?></p>
     <?php if (!empty($article['image_url'])): ?>
-      <img src="<?php echo e((string) $article['image_url']); ?>" alt="<?php echo e((string) ($article['image_alt'] ?: $article['titre'])); ?>" class="cover-image">
+      <img 
+        src="<?php echo e((string) $article['image_url']); ?>" 
+        alt="<?php echo e((string) ($article['image_alt'] ?: $article['titre'])); ?>" 
+        class="cover-image"
+        loading="lazy"
+        decoding="async">
     <?php endif; ?>
     <p><?php echo e((string) ($article['resume'] ?: mb_substr(strip_tags((string) $article['contenu']), 0, 220))); ?>...</p>
     <p><a href="<?php echo e(url(routeArticle((string) $article['slug']))); ?>">Lire l'article</a></p>
