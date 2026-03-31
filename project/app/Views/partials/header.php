@@ -13,17 +13,19 @@
 <body>
 <header class="site-header">
   <div class="container">
-    <h1 class="site-title">Iran Conflict Monitor</h1>
+    <h1 class="site-title">
+      <a class="brand-link" href="<?php echo e(url('')); ?>">
+        <img class="site-logo" src="<?php echo e(url('assets/images/logo.svg')); ?>" alt="" aria-hidden="true">
+        <span class="brand-name">Iran Conflict Monitor</span>
+      </a>
+    </h1>
     <p class="site-subtitle">Actualites, analyses et contexte geopolitique</p>
     <nav class="main-nav" aria-label="Navigation principale">
       <a href="<?php echo e(url('')); ?>">Accueil</a>
       <a href="<?php echo e(url(routeNews())); ?>">Actualites</a>
       <a href="<?php echo e(url(routeAdmin())); ?>">BackOffice</a>
-      <?php if (isAdminAuthenticated()): ?>
-        <a href="<?php echo e(url(routeLogout())); ?>">Deconnexion</a>
-      <?php else: ?>
-        <a href="<?php echo e(url(routeLogin())); ?>">Connexion BO</a>
-      <?php endif; ?>
+      <a href="<?php echo e(url(routeLogin())); ?>">Connexion</a>
+      <a href="<?php echo e(url(routeLogout())); ?>">Deconnexion</a>
     </nav>
   </div>
 </header>

@@ -88,6 +88,30 @@ h6 {
   line-height: 1.15;
 }
 
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: 12px;
+}
+
+.site-logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+}
+
+.brand-name {
+  display: inline-block;
+}
+
 .site-subtitle {
   margin: 0;
   color: #cfdae6;
@@ -407,6 +431,11 @@ button:active {
 
   .site-title {
     font-size: 1.45rem;
+  }
+
+  .site-logo {
+    width: 36px;
+    height: 36px;
   }
 
   .site-subtitle {
