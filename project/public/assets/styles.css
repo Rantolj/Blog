@@ -10,9 +10,11 @@
   --navy: #0f2238;
   --gold: #b58a3b;
   --border: #d6dbe3;
-  --shadow-sm: 0 2px 10px rgba(12, 25, 41, 0.06);
-  --shadow-md: 0 12px 30px rgba(12, 25, 41, 0.1);
-  --radius: 14px;
+  --shadow-sm: 0 10px 26px rgba(12, 25, 41, 0.06);
+  --shadow-md: 0 18px 44px rgba(12, 25, 41, 0.12);
+  --radius: 16px;
+  --radius-sm: 12px;
+  --ring: 0 0 0 4px rgba(196, 61, 47, 0.18);
 }
 
 * {
@@ -26,8 +28,11 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  font-family: "Merriweather", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  line-height: 1.68;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background:
     radial-gradient(1200px 420px at 4% -12%, rgba(196, 61, 47, 0.09), transparent 58%),
     radial-gradient(900px 320px at 100% 0%, rgba(181, 138, 59, 0.1), transparent 52%),
@@ -36,6 +41,20 @@ body {
 
 a {
   color: inherit;
+}
+
+::selection {
+  background: rgba(196, 61, 47, 0.22);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Merriweather", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  letter-spacing: 0.01em;
 }
 
 .container {
@@ -49,7 +68,9 @@ a {
   z-index: 30;
   padding: 22px 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-  background: linear-gradient(120deg, rgba(15, 34, 56, 0.96), rgba(18, 46, 74, 0.94));
+  background:
+    linear-gradient(90deg, rgba(181, 138, 59, 0.26), rgba(181, 138, 59, 0) 42%),
+    linear-gradient(120deg, rgba(15, 34, 56, 0.98), rgba(18, 46, 74, 0.94));
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow-sm);
 }
@@ -82,7 +103,7 @@ a {
 
 .main-nav a {
   text-decoration: none;
-  font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 700;
   letter-spacing: 0.015em;
   color: #f0f4fb;
@@ -97,6 +118,7 @@ a {
   transform: translateY(-1px);
   background: rgba(196, 61, 47, 0.2);
   border-color: rgba(255, 255, 255, 0.48);
+  outline: none;
 }
 
 main {
@@ -106,9 +128,9 @@ main {
 section,
 article {
   background: linear-gradient(180deg, var(--surface) 0%, #fdfcf9 100%);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(214, 219, 227, 0.9);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 22px;
   margin-bottom: 18px;
   box-shadow: var(--shadow-sm);
 }
@@ -118,6 +140,11 @@ section h3 {
   margin: 0 0 8px;
   color: var(--navy);
   line-height: 1.25;
+}
+
+section p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
 }
 
 .article-card {
@@ -150,6 +177,12 @@ section h3 {
   transition: background-size 0.2s ease, color 0.2s ease;
 }
 
+.article-card h3 a:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: 8px;
+}
+
 .article-card h3 a:hover,
 .article-card h3 a:focus-visible {
   color: var(--accent-strong);
@@ -160,7 +193,7 @@ section h3 {
   margin: 0;
   color: var(--muted);
   font-size: 0.87rem;
-  font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -169,7 +202,7 @@ section h3 {
   width: 100%;
   max-height: 360px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid #d8dfe8;
   display: block;
   background: linear-gradient(135deg, #dce3ee, #edf1f7);
@@ -179,7 +212,7 @@ figure {
   margin: 0;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
 }
 
 figure img {
@@ -214,6 +247,37 @@ figcaption {
   color: var(--ink-soft);
 }
 
+.article-detail div a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.article-detail div a:hover,
+.article-detail div a:focus-visible {
+  color: var(--accent);
+}
+
+.article-detail div ul,
+.article-detail div ol {
+  margin: 12px 0;
+  padding-left: 1.2rem;
+}
+
+.article-detail div li {
+  margin: 6px 0;
+}
+
+.article-detail blockquote {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-left: 4px solid rgba(181, 138, 59, 0.8);
+  background: rgba(181, 138, 59, 0.08);
+  border-radius: 12px;
+  color: var(--ink-soft);
+}
+
 .article-card,
 section,
 .article-detail {
@@ -225,7 +289,7 @@ label {
   display: block;
   margin-top: 12px;
   margin-bottom: 4px;
-  font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 0.9rem;
   letter-spacing: 0.02em;
   font-weight: 700;
@@ -239,7 +303,7 @@ button {
   width: 100%;
   margin-top: 4px;
   padding: 11px 12px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid #cfd7e2;
   font: inherit;
   background: #fff;
@@ -249,8 +313,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #8aa7cd;
-  box-shadow: 0 0 0 4px rgba(120, 157, 199, 0.2);
+  border-color: rgba(196, 61, 47, 0.65);
+  box-shadow: var(--ring);
 }
 
 textarea {
@@ -263,16 +327,22 @@ button {
   color: #fff;
   cursor: pointer;
   border: 0;
-  font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 700;
   letter-spacing: 0.015em;
   transition: transform 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 12px 26px rgba(196, 61, 47, 0.18);
 }
 
 button:hover,
 button:focus-visible {
   transform: translateY(-1px);
   filter: brightness(1.03);
+  outline: none;
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 .admin-form-wrap {
@@ -302,7 +372,7 @@ button:focus-visible {
 
 .site-footer h6 {
   margin: 0;
-  font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-weight: 600;
   letter-spacing: 0.03em;
   font-size: 0.82rem;
