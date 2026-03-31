@@ -156,6 +156,57 @@ function getArticleById(int $id): ?array
     return $article ?: null;
 }
 
+function getResponsiveImageSources(string $imageUrl): array
+{
+    $imageUrl = trim($imageUrl);
+    if ($imageUrl === '') {
+        return [
+            'small' => '',
+            'large' => '',
+        ];
+    }
+
+    $large = $imageUrl;
+    $small = $imageUrl;
+
+    if (str_ends_with($imageUrl, '.webp')) {
+        $candidateSmall = preg_replace('/\.webp$/', '_sm.webp', $imageUrl);
+        if (is_string($candidateSmall) && $candidateSmall !== '') {
+            $publicRoot = realpath(__DIR__ . '/../../public');
+            if ($publicRoot !== false) {
+                $candidatePath = $publicRoot . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $candidateSmall), DIRECTORY_SEPARATOR);
+                if (is_file($candidatePath)) {
+                    $small = $candidateSmall;
+                }
+            }
+        }
+    }
+
+    return [
+        'small' => $small,
+        'large' => $large,
+    ];
+}
+
+function resizeImageResource($sourceImage, int $maxWidth)
+{
+    $origWidth = imagesx($sourceImage);
+    $origHeight = imagesy($sourceImage);
+
+    if ($origWidth <= $maxWidth) {
+        return $sourceImage;
+    }
+
+    $ratio = $maxWidth / $origWidth;
+    $newWidth = $maxWidth;
+    $newHeight = (int) round($origHeight * $ratio);
+
+    $resized = imagecreatetruecolor($newWidth, $newHeight);
+    imagecopyresampled($resized, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+
+    return $resized;
+}
+
 function handleImageUpload(?array $file = null, ?string $existingImage = null): string
 {
     // Si aucun fichier n'est soumis, retourner l'image existante
@@ -214,30 +265,31 @@ function handleImageUpload(?array $file = null, ?string $existingImage = null): 
         throw new RuntimeException('Impossible de lire l\'image.');
     }
 
-    // Obtenir les dimensions
-    $origWidth = imagesx($image);
-    $origHeight = imagesy($image);
+    // Générer 2 tailles: version principale et version mobile plus légère.
+    $largeImage = resizeImageResource($image, 1200);
+    $smallImage = resizeImageResource($image, 640);
 
-    // Redimensionner à une taille raisonnable (max 1200px de large)
-    $maxWidth = 1200;
-    if ($origWidth > $maxWidth) {
-        $ratio = $maxWidth / $origWidth;
-        $newWidth = (int)$maxWidth;
-        $newHeight = (int)($origHeight * $ratio);
-        
-        $resized = imagecreatetruecolor($newWidth, $newHeight);
-        imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
-        imagedestroy($image);
-        $image = $resized;
-    }
-
-    // Sauvegarder en WebP (format optimal) avec compression
+    // Sauvegarder en WebP (format optimal) avec compression différenciée.
     $filepathWebp = $filepath . '.webp';
-    if (!imagewebp($image, $filepathWebp, 80)) {
+    $filepathWebpSmall = $filepath . '_sm.webp';
+
+    if (!imagewebp($largeImage, $filepathWebp, 78) || !imagewebp($smallImage, $filepathWebpSmall, 70)) {
+        if ($largeImage !== $image) {
+            imagedestroy($largeImage);
+        }
+        if ($smallImage !== $image) {
+            imagedestroy($smallImage);
+        }
         imagedestroy($image);
         throw new RuntimeException('Impossible de sauvegarder l\'image.');
     }
 
+    if ($largeImage !== $image) {
+        imagedestroy($largeImage);
+    }
+    if ($smallImage !== $image) {
+        imagedestroy($smallImage);
+    }
     imagedestroy($image);
 
     // Retourner le chemin WebP (plus léger)

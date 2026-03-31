@@ -11,6 +11,7 @@
 <?php endif; ?>
 
 <?php foreach ($articles as $article): ?>
+  <?php $imgSources = getResponsiveImageSources((string) ($article['image_url'] ?? '')); ?>
   <article class="article-card">
     <h3>
       <a href="<?php echo e(url(routeArticle((string) $article['slug']))); ?>">
@@ -18,13 +19,18 @@
       </a>
     </h3>
     <p class="meta">Publie le <?php echo e((string) $article['created_at']); ?></p>
-    <?php if (!empty($article['image_url'])): ?>
+    <?php if (!empty($imgSources['large'])): ?>
       <img 
-        src="<?php echo e((string) $article['image_url']); ?>" 
+        src="<?php echo e((string) $imgSources['small']); ?>"
+        srcset="<?php echo e((string) $imgSources['small']); ?> 640w, <?php echo e((string) $imgSources['large']); ?> 1200w"
+        sizes="(max-width: 700px) 92vw, (max-width: 1100px) 46vw, 360px"
         alt="<?php echo e((string) ($article['image_alt'] ?: $article['titre'])); ?>" 
         class="cover-image"
         loading="lazy"
-        decoding="async">
+        decoding="async"
+        fetchpriority="low"
+        width="640"
+        height="360">
     <?php endif; ?>
     <p><?php echo e((string) ($article['resume'] ?: mb_substr(strip_tags((string) $article['contenu']), 0, 220))); ?>...</p>
     <p><a href="<?php echo e(url(routeArticle((string) $article['slug']))); ?>">Lire l'article</a></p>

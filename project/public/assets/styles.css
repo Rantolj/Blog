@@ -84,7 +84,6 @@ article {
   border-radius: 8px;
   border: 1px solid var(--border);
   display: block;
-  font-display: swap;
 }
 
 /* Optimisation pour le chargement lazy */
@@ -102,6 +101,13 @@ figure {
 
 figure img {
   height: 100%;
+}
+
+.article-card,
+section,
+.article-detail {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 520px;
 }
 
 label {
@@ -141,7 +147,34 @@ button:hover {
 }
 
 @media (max-width: 700px) {
+  body {
+    background: var(--bg);
+  }
+
   .site-title {
     font-size: 1.45rem;
+  }
+
+  section,
+  article {
+    padding: 14px;
+  }
+
+  .cover-image {
+    max-height: 240px;
+  }
+}
+
+@media (prefers-reduced-data: reduce) {
+  body {
+    background: var(--bg);
+  }
+
+  .site-header {
+    background: var(--surface);
+  }
+
+  .cover-image {
+    max-height: 220px;
   }
 }
