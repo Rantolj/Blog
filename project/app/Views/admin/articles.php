@@ -5,7 +5,7 @@
 
 <section class="admin-form-wrap">
   <h3><?php echo $editingArticle ? 'Modifier un article' : 'Nouvel article'; ?></h3>
-  <form method="POST" action="<?php echo e(url(routeSave())); ?>">
+  <form method="POST" action="<?php echo e(url(routeSave())); ?>" enctype="multipart/form-data">
     <input type="hidden" name="id" value="<?php echo e((string) ($editingArticle['id'] ?? '')); ?>">
 
     <label for="titre">Titre (h1 de la page)</label>
@@ -23,8 +23,12 @@
     <label for="meta_description">Meta description (160 max recommande)</label>
     <textarea id="meta_description" name="meta_description" rows="2"><?php echo e((string) ($editingArticle['meta_description'] ?? '')); ?></textarea>
 
-    <label for="image_url">Image URL</label>
-    <input id="image_url" type="text" name="image_url" value="<?php echo e((string) ($editingArticle['image_url'] ?? '')); ?>">
+    <label for="image_file">Image (JPG, PNG, WebP - Max 5MB - Auto-optimisée en WebP)</label>
+    <input id="image_file" type="file" name="image_file" accept="image/jpeg,image/png,image/webp">
+    <p class="meta" style="font-size: 0.9em; color: #666;">L'image sera automatiquement compressée et convertie en WebP pour de meilleures performances.</p>
+    <?php if (!empty($editingArticle['image_url'])): ?>
+      <p class="meta">Image actuelle: <img src="<?php echo e((string) $editingArticle['image_url']); ?>" style="max-width: 100px; height: auto;"></p>
+    <?php endif; ?>
 
     <label for="image_alt">Texte alternatif image (alt)</label>
     <input id="image_alt" type="text" name="image_alt" value="<?php echo e((string) ($editingArticle['image_alt'] ?? '')); ?>">

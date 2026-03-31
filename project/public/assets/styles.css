@@ -83,6 +83,25 @@ article {
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--border);
+  display: block;
+  font-display: swap;
+}
+
+/* Optimisation pour le chargement lazy */
+@supports (content-visibility: auto) {
+  img {
+    content-visibility: auto;
+  }
+}
+
+/* Éviter le layout shift lors du chargement */
+figure {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+figure img {
+  height: 100%;
 }
 
 label {

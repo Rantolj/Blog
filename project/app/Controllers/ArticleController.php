@@ -156,6 +156,94 @@ function getArticleById(int $id): ?array
     return $article ?: null;
 }
 
+function handleImageUpload(?array $file = null, ?string $existingImage = null): string
+{
+    // Si aucun fichier n'est soumis, retourner l'image existante
+    if ($file === null || !isset($file['tmp_name']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        return $existingImage ?? '';
+    }
+
+    // Vérifier les erreurs d'upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new InvalidArgumentException('Erreur d\'upload : code ' . $file['error']);
+    }
+
+    // Validations du fichier
+    $maxSize = 5 * 1024 * 1024; // 5MB (avant compression)
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+
+    if ($file['size'] > $maxSize) {
+        throw new InvalidArgumentException('L\'image dépasse la limite de 5MB.');
+    }
+
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($mimeType, $allowedMimes, true)) {
+        throw new InvalidArgumentException('Format d\'image non autorisé. Utilisez JPG, PNG ou WebP.');
+    }
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExts, true)) {
+        throw new InvalidArgumentException('Extension non autorisée.');
+    }
+
+    // Créer le chemin de stockage (accessible publiquement via web)
+    $storageDir = __DIR__ . '/../../public/assets/images';
+    if (!is_dir($storageDir)) {
+        mkdir($storageDir, 0755, true);
+    }
+
+    // Générer un nom de fichier unique avec timestamp
+    $filename = 'img_' . time() . '_' . bin2hex(random_bytes(4));
+    $filepath = $storageDir . '/' . $filename;
+
+    // Charger l'image
+    $image = null;
+    if ($mimeType === 'image/jpeg' || $ext === 'jpg' || $ext === 'jpeg') {
+        $image = imagecreatefromjpeg($file['tmp_name']);
+    } elseif ($mimeType === 'image/png' || $ext === 'png') {
+        $image = imagecreatefrompng($file['tmp_name']);
+    } elseif ($mimeType === 'image/webp' || $ext === 'webp') {
+        $image = imagecreatefromwebp($file['tmp_name']);
+    }
+
+    if (!$image) {
+        throw new RuntimeException('Impossible de lire l\'image.');
+    }
+
+    // Obtenir les dimensions
+    $origWidth = imagesx($image);
+    $origHeight = imagesy($image);
+
+    // Redimensionner à une taille raisonnable (max 1200px de large)
+    $maxWidth = 1200;
+    if ($origWidth > $maxWidth) {
+        $ratio = $maxWidth / $origWidth;
+        $newWidth = (int)$maxWidth;
+        $newHeight = (int)($origHeight * $ratio);
+        
+        $resized = imagecreatetruecolor($newWidth, $newHeight);
+        imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+        imagedestroy($image);
+        $image = $resized;
+    }
+
+    // Sauvegarder en WebP (format optimal) avec compression
+    $filepathWebp = $filepath . '.webp';
+    if (!imagewebp($image, $filepathWebp, 80)) {
+        imagedestroy($image);
+        throw new RuntimeException('Impossible de sauvegarder l\'image.');
+    }
+
+    imagedestroy($image);
+
+    // Retourner le chemin WebP (plus léger)
+    return '/assets/images/' . $filename . '.webp';
+}
+
 function saveArticle(array $data, ?int $id = null): int
 {
     $conn = getDbConnection();
@@ -186,7 +274,18 @@ function saveArticle(array $data, ?int $id = null): int
         $metaDescription = mb_substr(strip_tags($resume), 0, 155);
     }
 
-    $imageUrl = trim((string) ($data['image_url'] ?? ''));
+    // Gérer l'upload d'image
+    $existingImage = null;
+    if ($id !== null) {
+        $existing = getArticleById($id);
+        $existingImage = $existing['image_url'] ?? null;
+    }
+
+    $imageUrl = handleImageUpload(
+        $_FILES['image_file'] ?? null,
+        $existingImage
+    );
+
     $imageAlt = trim((string) ($data['image_alt'] ?? ''));
     if ($imageAlt === '') {
         $imageAlt = $title;
