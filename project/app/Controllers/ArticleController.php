@@ -362,13 +362,16 @@ function saveArticle(array $data, ?int $id = null): int
     $status = in_array($statusInput, ['draft', 'published'], true) ? $statusInput : 'draft';
 
     if ($id === null) {
-        $sql = 'INSERT INTO articles (titre, slug, resume, contenu, meta_title, meta_description, image_url, image_alt, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        // On récupère l'identifiant de l'auteur depuis la session (ou 1 par défaut)
+        $authorId = $_SESSION['admin_id'] ?? 1;
+
+        $sql = 'INSERT INTO articles (author_id, titre, slug, resume, contenu, meta_title, meta_description, image_url, image_alt, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
         $stmt = $conn->prepare($sql);
         if ($stmt === false) {
             throw new RuntimeException('Erreur preparation : ' . $conn->error);
         }
 
-        $stmt->bind_param('sssssssss', $title, $slug, $resume, $content, $metaTitle, $metaDescription, $imageUrl, $imageAlt, $status);
+        $stmt->bind_param('isssssssss', $authorId, $title, $slug, $resume, $content, $metaTitle, $metaDescription, $imageUrl, $imageAlt, $status);
         if (!$stmt->execute()) {
             $stmt->close();
             $conn->close();
