@@ -62,8 +62,8 @@ INSERT IGNORE INTO categories (id, name, slug) VALUES
 (1, 'Développement', 'developpement'),
 (2, 'Astuces & Tutoriels', 'astuces-et-tutoriels');
 
--- 3. Insertion d'articles de test avec une image par défaut
--- L'image pointe vers un fichier qui serait placé manuellement dans "public/assets/images/default-article.jpg"
+-- 3. Insertion d'articles de test avec une image présente dans le dépôt
+-- Le chemin commence par / pour fonctionner sur toutes les routes
 INSERT IGNORE INTO articles (author_id, category_id, titre, slug, resume, contenu, meta_title, meta_description, image_url, image_alt, status) VALUES 
-(1, 1, 'Architecture MVC en PHP', 'architecture-mvc-en-php', 'Découvrez comment structurer correctement votre projet PHP de manière professionnelle.', '<p>Le modèle MVC sépare votre application en trois composants logiques : le Modèle, la Vue et le Contrôleur.</p><p>Cela garantit un code plus maintenable.</p>', 'Guide de l''architecture MVC PHP', 'Tutoriel complet pour bien démarrer une architecture MVC avec PHP 8.', 'assets/images/default-article.jpg', 'Illustration architecture MVC', 'published'),
-(1, 2, 'Mise en place de Docker', 'mise-en-place-de-docker', 'Un environnement de développement sain passe par Docker.', '<p>Découvrez comment containeriser votre base de données MySQL et votre serveur Apache/PHP en seulement quelques fichiers.</p>', 'Tutoriel Docker pour PHP', 'Apprendre à configurer un docker-compose.yml pour PHP et MySQL.', 'assets/images/default-article.jpg', 'Logo Docker', 'published');
+(1, 1, 'Architecture MVC en PHP', 'architecture-mvc-en-php', 'Découvrez comment structurer correctement votre projet PHP de manière professionnelle.', '<p>Le modèle MVC sépare votre application en trois composants logiques : le Modèle, la Vue et le Contrôleur.</p><p>Cela garantit un code plus maintenable.</p>', 'Guide de l''architecture MVC PHP', 'Tutoriel complet pour bien démarrer une architecture MVC avec PHP 8.', '/assets/images/default-article.jpg', 'Illustration architecture MVC', 'published'),
+(1, 2, 'Mise en place de Docker', 'mise-en-place-de-docker', 'Un environnement de développement sain passe par Docker.', '<p>Découvrez comment containeriser votre base de données MySQL et votre serveur Apache/PHP en seulement quelques fichiers.</p>', 'Tutoriel Docker pour PHP', 'Apprendre à configurer un docker-compose.yml pour PHP et MySQL.', '/assets/images/default-article.jpg', 'Logo Docker', 'published');
